@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,24 +8,30 @@ import { toast } from "sonner";
 import { Flame, ShoppingBag, Store } from "lucide-react";
 
 export default function ChooseRole() {
-  const { user } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<"seller" | "buyer" | null>(null);
+
+  // If user already has a role, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && role) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, role, navigate]);
 
   const handleChoose = async () => {
     if (!selected || !user) return;
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("user_roles").insert({
-        user_id: user.id,
-        role: selected,
-      });
+      const { error } = await supabase.from("user_roles").upsert(
+        { user_id: user.id, role: selected },
+        { onConflict: "user_id,role", ignoreDuplicates: true }
+      );
       if (error) throw error;
       toast.success(`You're now a ${selected}!`);
-      navigate("/");
-      window.location.reload();
+      window.location.href = "/dashboard";
     } catch (error: any) {
       toast.error(error.message);
     } finally {
