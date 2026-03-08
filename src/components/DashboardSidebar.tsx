@@ -36,12 +36,13 @@ const sellerNav = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "My Listings", url: "/dashboard/listings", icon: Package },
   { title: "Create Listing", url: "/dashboard/listings/new", icon: Plus },
+  { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
 ];
 
 const buyerNav = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Browse", url: "/dashboard/browse", icon: Search },
-  { title: "My Purchases", url: "/dashboard/purchases", icon: ShoppingBag },
+  { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
 ];
 
 const adminNav = [

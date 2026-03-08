@@ -59,6 +59,7 @@ export default function BrowseListings() {
           {filtered.map((listing) => (
             <Card
               key={listing.id}
+              onClick={() => navigate(`/dashboard/listing/${listing.id}`)}
               className="bg-card/80 border-border/50 hover:border-primary/30 hover:glow-flame transition-all cursor-pointer group"
             >
               <CardContent className="pt-5 space-y-3">
