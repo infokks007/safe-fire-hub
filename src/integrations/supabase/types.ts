@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      listings: {
+        Row: {
+          bundles: string[] | null
+          characters: string[] | null
+          created_at: string
+          description: string | null
+          evo_guns: string[] | null
+          freefire_uid: string | null
+          gun_skins: string[] | null
+          id: string
+          images: string[] | null
+          is_featured: boolean
+          level: number | null
+          price: number
+          seller_id: string
+          status: string
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          bundles?: string[] | null
+          characters?: string[] | null
+          created_at?: string
+          description?: string | null
+          evo_guns?: string[] | null
+          freefire_uid?: string | null
+          gun_skins?: string[] | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean
+          level?: number | null
+          price: number
+          seller_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          bundles?: string[] | null
+          characters?: string[] | null
+          created_at?: string
+          description?: string | null
+          evo_guns?: string[] | null
+          freefire_uid?: string | null
+          gun_skins?: string[] | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean
+          level?: number | null
+          price?: number
+          seller_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
