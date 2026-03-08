@@ -57,6 +57,9 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        flame: "hsl(var(--flame))",
+        "flame-glow": "hsl(var(--flame-glow))",
+        ember: "hsl(var(--ember))",
       },
       borderRadius: {
         lg: "var(--radius)",
