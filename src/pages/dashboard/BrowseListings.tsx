@@ -9,6 +9,7 @@ import { Flame, Search, Package } from "lucide-react";
 
 export default function BrowseListings() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
 
   const { data: listings, isLoading } = useQuery({
     queryKey: ["browse-listings"],
