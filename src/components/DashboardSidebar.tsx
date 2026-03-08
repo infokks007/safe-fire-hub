@@ -11,6 +11,7 @@ import {
   Settings,
   BarChart3,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
