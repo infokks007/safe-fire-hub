@@ -315,7 +315,7 @@ export default function ListingDetail() {
             )}
 
             {/* CTA: Chat with Seller */}
-            {role === "buyer" && !isSeller && (
+            {!isSeller && user && (
               <Button
                 onClick={() => startChatMutation.mutate()}
                 disabled={startChatMutation.isPending}
@@ -323,7 +323,7 @@ export default function ListingDetail() {
                 size="lg"
               >
                 <MessageSquare className="h-5 w-5" />
-                {startChatMutation.isPending ? "Opening chat..." : "Chat with Seller"}
+                {startChatMutation.isPending ? "Opening chat..." : "Chat Now"}
               </Button>
             )}
 
