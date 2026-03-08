@@ -47,13 +47,68 @@ export default function ChatPage() {
         : conversation!.buyer_id;
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name")
+        .select("display_name, is_verified")
         .eq("user_id", otherId)
         .single();
       if (error) throw error;
-      return data;
+      return { ...data, user_id: otherId };
     },
     enabled: !!conversation && !!user,
+  });
+
+  // Check if buyer can vouch (conversation > 2 days old, buyer hasn't vouched yet)
+  const isBuyer = conversation?.buyer_id === user?.id;
+  const sellerId = conversation?.seller_id;
+
+  const { data: canVouch } = useQuery({
+    queryKey: ["can-vouch", conversationId, user?.id],
+    queryFn: async () => {
+      const created = new Date(conversation!.created_at);
+      const now = new Date();
+      const daysDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff < 2) return false;
+
+      const { data } = await supabase
+        .from("seller_vouches")
+        .select("id")
+        .eq("seller_id", sellerId!)
+        .eq("voucher_id", user!.id)
+        .maybeSingle();
+      return !data; // can vouch if no existing vouch
+    },
+    enabled: !!conversation && !!user && isBuyer && !!sellerId,
+  });
+
+  const { data: vouchCount = 0 } = useQuery({
+    queryKey: ["vouch-count", sellerId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("seller_vouches")
+        .select("id", { count: "exact", head: true })
+        .eq("seller_id", sellerId!);
+      return count || 0;
+    },
+    enabled: !!sellerId,
+  });
+
+  const [showVouchBanner, setShowVouchBanner] = useState(true);
+
+  const vouchMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("seller_vouches").insert({
+        seller_id: sellerId!,
+        voucher_id: user!.id,
+        conversation_id: conversationId!,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Thanks for verifying this seller!");
+      setShowVouchBanner(false);
+      queryClient.invalidateQueries({ queryKey: ["can-vouch"] });
+      queryClient.invalidateQueries({ queryKey: ["vouch-count"] });
+    },
+    onError: () => toast.error("Already vouched or an error occurred"),
   });
 
   const { data: messages = [] } = useQuery({
