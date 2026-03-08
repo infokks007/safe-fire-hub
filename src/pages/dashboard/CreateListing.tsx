@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Flame, ArrowLeft } from "lucide-react";
+import { Flame, ArrowLeft, Upload, X, Image, Film } from "lucide-react";
 
 export default function CreateListing() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     title: "",
@@ -31,6 +34,63 @@ export default function CreateListing() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter((f) => {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`${f.name} is too large (max 20MB)`);
+        return false;
+      }
+      if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) {
+        toast.error(`${f.name} is not a valid image or video`);
+        return false;
+      }
+      return true;
+    });
+
+    if (mediaFiles.length + validFiles.length > 10) {
+      toast.error("Maximum 10 files allowed");
+      return;
+    }
+
+    setMediaFiles((prev) => [...prev, ...validFiles]);
+    validFiles.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      setMediaPreviews((prev) => [...prev, url]);
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    URL.revokeObjectURL(mediaPreviews[index]);
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+    setMediaPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadMedia = async (): Promise<string[]> => {
+    if (!user || mediaFiles.length === 0) return [];
+
+    const urls: string[] = [];
+    for (const file of mediaFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from("listing-media")
+        .upload(path, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("listing-media")
+        .getPublicUrl(path);
+
+      urls.push(urlData.publicUrl);
+    }
+    return urls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -38,6 +98,7 @@ export default function CreateListing() {
 
     try {
       const toArray = (s: string) => s.split(",").map((v) => v.trim()).filter(Boolean);
+      const imageUrls = await uploadMedia();
 
       const { error } = await supabase.from("listings").insert({
         seller_id: user.id,
@@ -50,6 +111,7 @@ export default function CreateListing() {
         gun_skins: toArray(form.gun_skins),
         bundles: toArray(form.bundles),
         characters: toArray(form.characters),
+        images: imageUrls.length > 0 ? imageUrls : null,
       });
 
       if (error) throw error;
@@ -86,6 +148,51 @@ export default function CreateListing() {
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea name="description" id="description" value={form.description} onChange={handleChange} placeholder="Describe the account..." rows={3} />
+            </div>
+
+            {/* Media Upload */}
+            <div className="space-y-2">
+              <Label>Photos & Videos</Label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-border/50 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload photos or videos (max 10 files, 20MB each)
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+
+              {mediaPreviews.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
+                  {mediaPreviews.map((preview, i) => (
+                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted">
+                      {mediaFiles[i]?.type.startsWith("video/") ? (
+                        <div className="flex items-center justify-center h-full">
+                          <Film className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      ) : (
+                        <img src={preview} alt="" className="w-full h-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="absolute top-1 right-1 bg-background/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
