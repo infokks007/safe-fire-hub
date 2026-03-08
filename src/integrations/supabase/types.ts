@@ -174,6 +174,38 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_vouches: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          seller_id: string
+          voucher_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          seller_id: string
+          voucher_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          seller_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_vouches_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
