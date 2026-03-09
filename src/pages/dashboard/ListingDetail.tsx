@@ -491,6 +491,70 @@ export default function ListingDetail() {
             </div>
           </motion.div>
         </div>
+
+        {/* Buy Dialog */}
+        <Dialog open={showBuyDialog} onOpenChange={setShowBuyDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-display">Confirm Purchase</DialogTitle>
+              <DialogDescription>
+                You are about to purchase this FreeFire account with escrow protection
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="rounded-xl bg-secondary/30 p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Listing</span>
+                  <span className="font-display font-semibold">{listing?.title}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-display font-bold text-primary">
+                    ₹{Number(listing?.price).toFixed(2)}
+                  </span>
+                </div>
+                <Separator className="bg-border/30" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Wallet className="h-3 w-3" /> Your Balance
+                  </span>
+                  <span className="font-display font-semibold">
+                    ₹{Number(wallet?.balance ?? 0).toFixed(2)}
+                  </span>
+                </div>
+                {wallet && Number(wallet.balance) < Number(listing?.price) && (
+                  <p className="text-xs text-destructive">
+                    Insufficient balance. Please add ₹
+                    {(Number(listing?.price) - Number(wallet.balance)).toFixed(2)} to your wallet.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-xs space-y-1">
+                <p className="font-display font-semibold text-primary">🔒 Escrow Protection</p>
+                <p className="text-muted-foreground">
+                  Funds are held securely until you confirm delivery. You're protected!
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBuyDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => buyNowMutation.mutate()}
+                disabled={
+                  buyNowMutation.isPending ||
+                  (wallet && Number(wallet.balance) < Number(listing?.price))
+                }
+                className="font-display glow-flame"
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                {buyNowMutation.isPending ? "Processing..." : "Confirm Purchase"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </>
   );
