@@ -12,6 +12,10 @@ import {
   BarChart3,
   LogOut,
   MessageSquare,
+  Wallet,
+  ShieldAlert,
+  Newspaper,
+  DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
