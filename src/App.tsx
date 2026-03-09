@@ -20,6 +20,10 @@ import ChatPage from "./pages/dashboard/ChatPage";
 import AdminUsers from "./pages/dashboard/admin/AdminUsers";
 import AdminListings from "./pages/dashboard/admin/AdminListings";
 import AdminAnalytics from "./pages/dashboard/admin/AdminAnalytics";
+import AdminTransactions from "./pages/dashboard/admin/AdminTransactions";
+import WalletPage from "./pages/dashboard/WalletPage";
+import DisputesPage from "./pages/dashboard/DisputesPage";
+import NewsPage from "./pages/dashboard/NewsPage";
 import { Flame } from "lucide-react";
 
 const queryClient = new QueryClient();
