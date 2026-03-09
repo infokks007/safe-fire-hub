@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +10,27 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Flame, MessageSquare, User, Shield, ChevronLeft, ChevronRight,
-  Play, Image as ImageIcon, Eye, Tag, X
+  Play, Image as ImageIcon, Eye, Tag, X, ShoppingBag, Wallet
 } from "lucide-react";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewsList from "@/components/ReviewsList";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedImage, setSelectedImage] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showBuyDialog, setShowBuyDialog] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
@@ -42,6 +52,20 @@ export default function ListingDetail() {
     enabled: !!listing?.seller_id,
   });
 
+  const { data: wallet } = useQuery({
+    queryKey: ["my-wallet", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      if (error) return { balance: 0, escrow_balance: 0 };
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const startChatMutation = useMutation({
     mutationFn: async () => {
       if (!user || !listing) throw new Error("Not authenticated");
@@ -57,6 +81,86 @@ export default function ListingDetail() {
       return data.id;
     },
     onSuccess: (conversationId) => navigate(`/dashboard/chat/${conversationId}`),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Buy now with escrow
+  const buyNowMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !listing || !wallet) throw new Error("Not authenticated");
+      
+      const price = Number(listing.price);
+      const balance = Number(wallet.balance);
+      
+      if (balance < price) {
+        throw new Error(`Insufficient balance. You need ₹${(price - balance).toFixed(2)} more.`);
+      }
+
+      // Deduct from buyer wallet and add to escrow
+      const { error: walletErr } = await supabase
+        .from("wallets")
+        .update({
+          balance: balance - price,
+          escrow_balance: Number(wallet.escrow_balance) + price,
+        } as any)
+        .eq("user_id", user.id);
+      if (walletErr) throw walletErr;
+
+      // Create order
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          listing_id: listing.id,
+          buyer_id: user.id,
+          seller_id: listing.seller_id,
+          amount: price,
+          platform_fee: 0,
+          status: "escrow",
+        } as any)
+        .select()
+        .single();
+      if (orderErr) throw orderErr;
+
+      // Update listing status
+      await supabase
+        .from("listings")
+        .update({ status: "pending" } as any)
+        .eq("id", listing.id);
+
+      // Notify seller
+      await supabase.rpc("create_notification", {
+        _user_id: listing.seller_id,
+        _type: "order_update",
+        _title: "New Order! 🎉",
+        _message: `Someone purchased "${listing.title}" for ₹${price.toFixed(2)}. Please deliver the account.`,
+        _reference_id: order.id,
+      });
+
+      // Create conversation if not exists
+      const { data: convo } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", user.id)
+        .single();
+      
+      if (!convo) {
+        await supabase.from("conversations").insert({
+          listing_id: listing.id,
+          buyer_id: user.id,
+          seller_id: listing.seller_id,
+        });
+      }
+
+      return order;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["listing"] });
+      setShowBuyDialog(false);
+      toast.success("Purchase successful! Funds are held in escrow. Chat with seller to receive your account.");
+      navigate("/dashboard/orders");
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -333,22 +437,39 @@ export default function ListingDetail() {
             )}
 
             {/* CTA */}
-            {!isSeller && user && (
+            {!isSeller && user && listing.status === "active" && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
+                className="space-y-2"
               >
                 <Button
-                  onClick={() => startChatMutation.mutate()}
-                  disabled={startChatMutation.isPending}
+                  onClick={() => setShowBuyDialog(true)}
                   className="w-full font-display glow-flame gap-2 h-13 text-base rounded-xl group"
                   size="lg"
                 >
-                  <MessageSquare className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                  {startChatMutation.isPending ? "Opening chat..." : "Chat Now"}
+                  <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  Buy Now - ₹{Number(listing.price).toFixed(2)}
+                </Button>
+                <Button
+                  onClick={() => startChatMutation.mutate()}
+                  disabled={startChatMutation.isPending}
+                  variant="outline"
+                  className="w-full font-display gap-2 h-11 rounded-xl"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {startChatMutation.isPending ? "Opening chat..." : "Chat with Seller"}
                 </Button>
               </motion.div>
+            )}
+
+            {!isSeller && listing.status !== "active" && (
+              <div className="rounded-2xl glass glass-border p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {listing.status === "sold" ? "This account has been sold" : "This listing is no longer available"}
+                </p>
+              </div>
             )}
 
             {isSeller && (
@@ -370,6 +491,70 @@ export default function ListingDetail() {
             </div>
           </motion.div>
         </div>
+
+        {/* Buy Dialog */}
+        <Dialog open={showBuyDialog} onOpenChange={setShowBuyDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-display">Confirm Purchase</DialogTitle>
+              <DialogDescription>
+                You are about to purchase this FreeFire account with escrow protection
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="rounded-xl bg-secondary/30 p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Listing</span>
+                  <span className="font-display font-semibold">{listing?.title}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-display font-bold text-primary">
+                    ₹{Number(listing?.price).toFixed(2)}
+                  </span>
+                </div>
+                <Separator className="bg-border/30" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Wallet className="h-3 w-3" /> Your Balance
+                  </span>
+                  <span className="font-display font-semibold">
+                    ₹{Number(wallet?.balance ?? 0).toFixed(2)}
+                  </span>
+                </div>
+                {wallet && Number(wallet.balance) < Number(listing?.price) && (
+                  <p className="text-xs text-destructive">
+                    Insufficient balance. Please add ₹
+                    {(Number(listing?.price) - Number(wallet.balance)).toFixed(2)} to your wallet.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-xs space-y-1">
+                <p className="font-display font-semibold text-primary">🔒 Escrow Protection</p>
+                <p className="text-muted-foreground">
+                  Funds are held securely until you confirm delivery. You're protected!
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBuyDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => buyNowMutation.mutate()}
+                disabled={
+                  buyNowMutation.isPending ||
+                  (wallet && Number(wallet.balance) < Number(listing?.price))
+                }
+                className="font-display glow-flame"
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                {buyNowMutation.isPending ? "Processing..." : "Confirm Purchase"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </>
   );

@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
+import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 
 export default function DashboardLayout() {
   return (
@@ -9,8 +10,9 @@ export default function DashboardLayout() {
       <div className="min-h-screen flex w-full">
         <DashboardSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center border-b border-border/30 glass sticky top-0 z-40 px-4">
-            <SidebarTrigger className="mr-4 hover:text-primary transition-colors" />
+          <header className="h-14 flex items-center justify-between border-b border-border/30 glass sticky top-0 z-40 px-4">
+            <SidebarTrigger className="hover:text-primary transition-colors" />
+            <NotificationsDropdown />
           </header>
           <motion.main
             initial={{ opacity: 0 }}
