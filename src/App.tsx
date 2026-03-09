@@ -77,10 +77,12 @@ const App = () => (
               <Route path="wallet" element={<WalletPage />} />
               <Route path="disputes" element={<DisputesPage />} />
               <Route path="news" element={<NewsPage />} />
+              <Route path="orders" element={<OrdersPage />} />
               <Route path="admin/users" element={<AdminUsers />} />
               <Route path="admin/listings" element={<AdminListings />} />
               <Route path="admin/analytics" element={<AdminAnalytics />} />
               <Route path="admin/transactions" element={<AdminTransactions />} />
+              <Route path="admin/orders" element={<AdminOrders />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
