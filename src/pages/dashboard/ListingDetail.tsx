@@ -12,6 +12,8 @@ import {
   ArrowLeft, Flame, MessageSquare, User, Shield, ChevronLeft, ChevronRight,
   Play, Image as ImageIcon, Eye, Tag, X
 } from "lucide-react";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewsList from "@/components/ReviewsList";
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
