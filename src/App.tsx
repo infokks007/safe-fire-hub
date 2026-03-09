@@ -72,9 +72,13 @@ const App = () => (
               <Route path="chat" element={<ChatList />} />
               <Route path="chat/:conversationId" element={<ChatPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="wallet" element={<WalletPage />} />
+              <Route path="disputes" element={<DisputesPage />} />
+              <Route path="news" element={<NewsPage />} />
               <Route path="admin/users" element={<AdminUsers />} />
               <Route path="admin/listings" element={<AdminListings />} />
               <Route path="admin/analytics" element={<AdminAnalytics />} />
+              <Route path="admin/transactions" element={<AdminTransactions />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
