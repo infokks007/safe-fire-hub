@@ -21,9 +21,11 @@ import AdminUsers from "./pages/dashboard/admin/AdminUsers";
 import AdminListings from "./pages/dashboard/admin/AdminListings";
 import AdminAnalytics from "./pages/dashboard/admin/AdminAnalytics";
 import AdminTransactions from "./pages/dashboard/admin/AdminTransactions";
+import AdminOrders from "./pages/dashboard/admin/AdminOrders";
 import WalletPage from "./pages/dashboard/WalletPage";
 import DisputesPage from "./pages/dashboard/DisputesPage";
 import NewsPage from "./pages/dashboard/NewsPage";
+import OrdersPage from "./pages/dashboard/OrdersPage";
 import { Flame } from "lucide-react";
 
 const queryClient = new QueryClient();
