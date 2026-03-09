@@ -2,14 +2,15 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Wallet, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle, Copy, IndianRupee } from "lucide-react";
+import { Wallet, ArrowDownLeft, ArrowUpRight, Clock, CheckCircle, XCircle, Copy, IndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import WithdrawSection from "@/components/wallet/WithdrawSection";
 
 const UPI_ID = "6200450674";
 
@@ -23,7 +24,6 @@ export default function WalletPage() {
   const { data: wallet } = useQuery({
     queryKey: ["wallet", user?.id],
     queryFn: async () => {
-      // Try to get wallet, create if not exists
       let { data, error } = await supabase
         .from("wallets")
         .select("*")
@@ -99,6 +99,9 @@ export default function WalletPage() {
     return <ArrowUpRight className="h-4 w-4 text-destructive" />;
   };
 
+  const balance = Number(wallet?.balance ?? 0);
+  const escrowBalance = Number(wallet?.escrow_balance ?? 0);
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -114,7 +117,7 @@ export default function WalletPage() {
             <CardContent className="pt-5 pb-4">
               <p className="text-xs text-muted-foreground font-display uppercase tracking-wider">Available Balance</p>
               <p className="text-3xl font-display font-bold text-primary mt-1">
-                ₹{Number(wallet?.balance ?? 0).toFixed(2)}
+                ₹{balance.toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -124,7 +127,7 @@ export default function WalletPage() {
             <CardContent className="pt-5 pb-4">
               <p className="text-xs text-muted-foreground font-display uppercase tracking-wider">Escrow Balance</p>
               <p className="text-3xl font-display font-bold text-amber-400 mt-1">
-                ₹{Number(wallet?.escrow_balance ?? 0).toFixed(2)}
+                ₹{escrowBalance.toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -167,7 +170,6 @@ export default function WalletPage() {
                     Send the exact amount via any UPI app (GPay, PhonePe, Paytm, etc.)
                   </p>
                 </div>
-
                 <div className="space-y-3">
                   <p className="text-sm font-display font-semibold">Step 2: Enter payment details</p>
                   <div className="space-y-2">
@@ -206,6 +208,9 @@ export default function WalletPage() {
           )}
         </AnimatePresence>
       </Card>
+
+      {/* Withdraw Funds */}
+      <WithdrawSection balance={balance} />
 
       {/* Transaction History */}
       <Card className="bg-card/80 border-border/50">

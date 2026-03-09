@@ -369,11 +369,14 @@ export type Database = {
       }
       orders: {
         Row: {
+          account_credentials: string | null
           admin_notes: string | null
           admin_released: boolean
+          admin_verified: boolean | null
           amount: number
           buyer_confirmed: boolean
           buyer_id: string
+          buyer_login_confirmed_at: string | null
           cancelled_at: string | null
           created_at: string
           id: string
@@ -385,11 +388,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_credentials?: string | null
           admin_notes?: string | null
           admin_released?: boolean
+          admin_verified?: boolean | null
           amount: number
           buyer_confirmed?: boolean
           buyer_id: string
+          buyer_login_confirmed_at?: string | null
           cancelled_at?: string | null
           created_at?: string
           id?: string
@@ -401,11 +407,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_credentials?: string | null
           admin_notes?: string | null
           admin_released?: boolean
+          admin_verified?: boolean | null
           amount?: number
           buyer_confirmed?: boolean
           buyer_id?: string
+          buyer_login_confirmed_at?: string | null
           cancelled_at?: string | null
           created_at?: string
           id?: string
@@ -661,6 +670,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      process_withdrawal: {
+        Args: {
+          _admin_notes?: string
+          _status: string
+          _transaction_id: string
+        }
+        Returns: undefined
+      }
+      request_withdrawal: {
+        Args: { _amount: number; _upi_id: string; _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
