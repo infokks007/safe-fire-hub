@@ -17,6 +17,9 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import ListingDetail from "./pages/dashboard/ListingDetail";
 import ChatList from "./pages/dashboard/ChatList";
 import ChatPage from "./pages/dashboard/ChatPage";
+import AdminUsers from "./pages/dashboard/admin/AdminUsers";
+import AdminListings from "./pages/dashboard/admin/AdminListings";
+import AdminAnalytics from "./pages/dashboard/admin/AdminAnalytics";
 import { Flame } from "lucide-react";
 
 const queryClient = new QueryClient();
