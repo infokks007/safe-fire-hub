@@ -49,12 +49,54 @@ export type Database = {
           },
         ]
       }
+      flagged_listings: {
+        Row: {
+          admin_notes: string | null
+          confidence: number | null
+          created_at: string
+          id: string
+          listing_id: string
+          reason: string
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          reason: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          reason?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flagged_listings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           bundles: string[] | null
           characters: string[] | null
           created_at: string
           description: string | null
+          elite_pass: boolean | null
           evo_guns: string[] | null
           freefire_uid: string | null
           gun_skins: string[] | null
@@ -63,6 +105,8 @@ export type Database = {
           is_featured: boolean
           level: number | null
           price: number
+          rank: string | null
+          region: string | null
           seller_id: string
           status: string
           title: string
@@ -74,6 +118,7 @@ export type Database = {
           characters?: string[] | null
           created_at?: string
           description?: string | null
+          elite_pass?: boolean | null
           evo_guns?: string[] | null
           freefire_uid?: string | null
           gun_skins?: string[] | null
@@ -82,6 +127,8 @@ export type Database = {
           is_featured?: boolean
           level?: number | null
           price: number
+          rank?: string | null
+          region?: string | null
           seller_id: string
           status?: string
           title: string
@@ -93,6 +140,7 @@ export type Database = {
           characters?: string[] | null
           created_at?: string
           description?: string | null
+          elite_pass?: boolean | null
           evo_guns?: string[] | null
           freefire_uid?: string | null
           gun_skins?: string[] | null
@@ -101,6 +149,8 @@ export type Database = {
           is_featured?: boolean
           level?: number | null
           price?: number
+          rank?: string | null
+          region?: string | null
           seller_id?: string
           status?: string
           title?: string
@@ -174,6 +224,50 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          account_accuracy: number | null
+          buyer_id: string
+          comment: string | null
+          created_at: string
+          delivery_speed: number | null
+          id: string
+          listing_id: string
+          rating: number
+          seller_id: string
+        }
+        Insert: {
+          account_accuracy?: number | null
+          buyer_id: string
+          comment?: string | null
+          created_at?: string
+          delivery_speed?: number | null
+          id?: string
+          listing_id: string
+          rating: number
+          seller_id: string
+        }
+        Update: {
+          account_accuracy?: number | null
+          buyer_id?: string
+          comment?: string | null
+          created_at?: string
+          delivery_speed?: number | null
+          id?: string
+          listing_id?: string
+          rating?: number
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_vouches: {
         Row: {
           conversation_id: string
@@ -232,6 +326,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_seller_rating: {
+        Args: { _seller_id: string }
+        Returns: {
+          avg_rating: number
+          total_reviews: number
+          total_sales: number
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

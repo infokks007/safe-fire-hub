@@ -36,6 +36,7 @@ const sellerNav = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "My Listings", url: "/dashboard/listings", icon: Package },
   { title: "Create Listing", url: "/dashboard/listings/new", icon: Plus },
+  { title: "Browse", url: "/dashboard/browse", icon: Search },
   { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
 ];
 
@@ -50,6 +51,8 @@ const adminNav = [
   { title: "All Listings", url: "/dashboard/admin/listings", icon: Package },
   { title: "Users", url: "/dashboard/admin/users", icon: Users },
   { title: "Analytics", url: "/dashboard/admin/analytics", icon: BarChart3 },
+  { title: "Browse", url: "/dashboard/browse", icon: Search },
+  { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
 ];
 
 export function DashboardSidebar() {

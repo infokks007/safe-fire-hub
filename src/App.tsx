@@ -17,6 +17,9 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import ListingDetail from "./pages/dashboard/ListingDetail";
 import ChatList from "./pages/dashboard/ChatList";
 import ChatPage from "./pages/dashboard/ChatPage";
+import AdminUsers from "./pages/dashboard/admin/AdminUsers";
+import AdminListings from "./pages/dashboard/admin/AdminListings";
+import AdminAnalytics from "./pages/dashboard/admin/AdminAnalytics";
 import { Flame } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -65,6 +68,9 @@ const App = () => (
               <Route path="chat" element={<ChatList />} />
               <Route path="chat/:conversationId" element={<ChatPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="admin/users" element={<AdminUsers />} />
+              <Route path="admin/listings" element={<AdminListings />} />
+              <Route path="admin/analytics" element={<AdminAnalytics />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
