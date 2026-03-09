@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import {
   Package, Plus, Eye, DollarSign, Search, ShoppingBag,
-  TrendingUp, Users, Shield, Flame, ArrowRight,
+  TrendingUp, Users, Shield, Flame, ArrowRight, Wallet, Flag, BarChart3,
 } from "lucide-react";
 
 const fadeUp = {
