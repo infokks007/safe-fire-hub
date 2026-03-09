@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,14 +31,14 @@ import {
   Newspaper,
   Plus,
   Flag,
-  MessageSquare,
+  ArrowUpRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function AdminTransactions() {
   const queryClient = useQueryClient();
 
-  // Wallet Transactions (deposits)
+  // Pending deposits
   const { data: pendingDeposits } = useQuery({
     queryKey: ["admin-pending-deposits"],
     queryFn: async () => {
@@ -47,6 +46,22 @@ export default function AdminTransactions() {
         .from("wallet_transactions")
         .select("*")
         .eq("status", "pending")
+        .eq("type", "deposit")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Pending withdrawals
+  const { data: pendingWithdrawals } = useQuery({
+    queryKey: ["admin-pending-withdrawals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wallet_transactions")
+        .select("*")
+        .eq("status", "pending")
+        .eq("type", "withdrawal")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -82,13 +97,12 @@ export default function AdminTransactions() {
   // Approve deposit
   const approveMutation = useMutation({
     mutationFn: async (txn: any) => {
-      // Update transaction
       const { error: txnErr } = await supabase
         .from("wallet_transactions")
         .update({ status: "completed", resolved_at: new Date().toISOString() } as any)
         .eq("id", txn.id);
       if (txnErr) throw txnErr;
-      // Update wallet balance
+
       const { data: wallet } = await supabase
         .from("wallets")
         .select("balance")
@@ -101,6 +115,14 @@ export default function AdminTransactions() {
           .eq("user_id", txn.user_id);
         if (walletErr) throw walletErr;
       }
+
+      await supabase.rpc("create_notification", {
+        _user_id: txn.user_id,
+        _type: "payment",
+        _title: "Deposit Approved!",
+        _message: `₹${Number(txn.amount).toFixed(2)} has been credited to your wallet.`,
+        _reference_id: txn.id,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-deposits"] });
@@ -111,12 +133,20 @@ export default function AdminTransactions() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (txn: any) => {
       const { error } = await supabase
         .from("wallet_transactions")
         .update({ status: "rejected", resolved_at: new Date().toISOString() } as any)
-        .eq("id", id);
+        .eq("id", txn.id);
       if (error) throw error;
+
+      await supabase.rpc("create_notification", {
+        _user_id: txn.user_id,
+        _type: "payment",
+        _title: "Deposit Rejected",
+        _message: `Your deposit of ₹${Number(txn.amount).toFixed(2)} was rejected. Please check your UPI transaction ID.`,
+        _reference_id: txn.id,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-deposits"] });
@@ -124,7 +154,35 @@ export default function AdminTransactions() {
     },
   });
 
-  // Resolve dispute
+  // Process withdrawal
+  const processWithdrawalMutation = useMutation({
+    mutationFn: async ({ txn, status }: { txn: any; status: string }) => {
+      const { error } = await supabase.rpc("process_withdrawal", {
+        _transaction_id: txn.id,
+        _status: status,
+        _admin_notes: status === "completed" ? "Payment sent via UPI" : "Withdrawal rejected",
+      });
+      if (error) throw error;
+
+      await supabase.rpc("create_notification", {
+        _user_id: txn.user_id,
+        _type: "payment",
+        _title: status === "completed" ? "Withdrawal Processed!" : "Withdrawal Rejected",
+        _message: status === "completed"
+          ? `₹${Number(txn.amount).toFixed(2)} has been sent to your UPI: ${txn.upi_transaction_id}`
+          : `Your withdrawal of ₹${Number(txn.amount).toFixed(2)} was rejected. Funds have been refunded to your wallet.`,
+        _reference_id: txn.id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-withdrawals"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-all-transactions"] });
+      toast.success("Withdrawal processed!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Disputes
   const [disputeResolution, setDisputeResolution] = useState<Record<string, string>>({});
   const resolveDisputeMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -144,7 +202,7 @@ export default function AdminTransactions() {
     },
   });
 
-  // News management
+  // News
   const { data: articles } = useQuery({
     queryKey: ["admin-articles"],
     queryFn: async () => {
@@ -179,7 +237,8 @@ export default function AdminTransactions() {
   });
 
   const openDisputes = disputes?.filter((d: any) => d.status === "open" || d.status === "investigating") || [];
-  const pendingCount = pendingDeposits?.length ?? 0;
+  const depositCount = pendingDeposits?.length ?? 0;
+  const withdrawalCount = pendingWithdrawals?.length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -192,7 +251,10 @@ export default function AdminTransactions() {
       <Tabs defaultValue="deposits" className="space-y-4">
         <TabsList className="glass glass-border flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="deposits" className="font-display text-xs">
-            <Wallet className="h-3 w-3 mr-1" /> Deposits ({pendingCount})
+            <Wallet className="h-3 w-3 mr-1" /> Deposits ({depositCount})
+          </TabsTrigger>
+          <TabsTrigger value="withdrawals" className="font-display text-xs">
+            <ArrowUpRight className="h-3 w-3 mr-1" /> Withdrawals ({withdrawalCount})
           </TabsTrigger>
           <TabsTrigger value="disputes" className="font-display text-xs">
             <AlertTriangle className="h-3 w-3 mr-1" /> Disputes ({openDisputes.length})
@@ -205,7 +267,7 @@ export default function AdminTransactions() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Pending Deposits */}
+        {/* Deposits */}
         <TabsContent value="deposits" className="space-y-3">
           {!pendingDeposits?.length ? (
             <div className="text-center py-12">
@@ -233,7 +295,58 @@ export default function AdminTransactions() {
                         <Button size="sm" className="font-display text-xs" onClick={() => approveMutation.mutate(txn)} disabled={approveMutation.isPending}>
                           <CheckCircle className="h-3 w-3 mr-1" /> Approve
                         </Button>
-                        <Button size="sm" variant="destructive" className="font-display text-xs" onClick={() => rejectMutation.mutate(txn.id)}>
+                        <Button size="sm" variant="destructive" className="font-display text-xs" onClick={() => rejectMutation.mutate(txn)}>
+                          <XCircle className="h-3 w-3 mr-1" /> Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
+        </TabsContent>
+
+        {/* Withdrawals */}
+        <TabsContent value="withdrawals" className="space-y-3">
+          {!pendingWithdrawals?.length ? (
+            <div className="text-center py-12">
+              <CheckCircle className="h-16 w-16 mx-auto text-green-500/30" />
+              <p className="text-muted-foreground mt-3">No pending withdrawals</p>
+            </div>
+          ) : (
+            pendingWithdrawals.map((txn: any, i: number) => (
+              <motion.div key={txn.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
+                <Card className="bg-card/80 border-primary/30">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <ArrowUpRight className="h-4 w-4 text-primary" />
+                          <span className="font-display font-semibold">Withdrawal Request</span>
+                          <Badge variant="secondary" className="text-[10px]">₹{Number(txn.amount).toFixed(2)}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          User: {txn.user_id.slice(0, 8)}... • UPI ID: <code className="text-primary">{txn.upi_transaction_id}</code>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(txn.created_at).toLocaleString()}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="font-display text-xs"
+                          onClick={() => processWithdrawalMutation.mutate({ txn, status: "completed" })}
+                          disabled={processWithdrawalMutation.isPending}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" /> Paid
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="font-display text-xs"
+                          onClick={() => processWithdrawalMutation.mutate({ txn, status: "rejected" })}
+                          disabled={processWithdrawalMutation.isPending}
+                        >
                           <XCircle className="h-3 w-3 mr-1" /> Reject
                         </Button>
                       </div>
@@ -293,7 +406,7 @@ export default function AdminTransactions() {
           )}
         </TabsContent>
 
-        {/* News Management */}
+        {/* News */}
         <TabsContent value="news" className="space-y-4">
           <Card className="bg-card/80 border-border/50">
             <CardHeader>
@@ -304,11 +417,7 @@ export default function AdminTransactions() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Title</Label>
-                <Input
-                  value={newArticle.title}
-                  onChange={(e) => setNewArticle((p) => ({ ...p, title: e.target.value }))}
-                  placeholder="Article title..."
-                />
+                <Input value={newArticle.title} onChange={(e) => setNewArticle((p) => ({ ...p, title: e.target.value }))} placeholder="Article title..." />
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
@@ -326,18 +435,9 @@ export default function AdminTransactions() {
               </div>
               <div className="space-y-2">
                 <Label>Content</Label>
-                <Textarea
-                  value={newArticle.content}
-                  onChange={(e) => setNewArticle((p) => ({ ...p, content: e.target.value }))}
-                  placeholder="Write your article..."
-                  rows={8}
-                />
+                <Textarea value={newArticle.content} onChange={(e) => setNewArticle((p) => ({ ...p, content: e.target.value }))} placeholder="Write your article..." rows={8} />
               </div>
-              <Button
-                onClick={() => createArticleMutation.mutate()}
-                disabled={createArticleMutation.isPending || !newArticle.title || !newArticle.content}
-                className="font-display glow-flame"
-              >
+              <Button onClick={() => createArticleMutation.mutate()} disabled={createArticleMutation.isPending || !newArticle.title || !newArticle.content} className="font-display glow-flame">
                 {createArticleMutation.isPending ? "Publishing..." : "Publish Article"}
               </Button>
             </CardContent>
@@ -360,7 +460,7 @@ export default function AdminTransactions() {
           ))}
         </TabsContent>
 
-        {/* Transaction History */}
+        {/* History */}
         <TabsContent value="history" className="space-y-2">
           {allTransactions?.map((txn: any, i: number) => (
             <motion.div key={txn.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}>
@@ -370,6 +470,7 @@ export default function AdminTransactions() {
                     <div className="flex items-center gap-3">
                       <Badge variant="outline" className="text-[10px] capitalize">{txn.type}</Badge>
                       <span className="font-mono text-xs">{txn.user_id.slice(0, 8)}...</span>
+                      {txn.upi_transaction_id && <span className="text-[10px] text-muted-foreground">UPI: {txn.upi_transaction_id}</span>}
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-display font-bold">₹{Number(txn.amount).toFixed(2)}</span>
