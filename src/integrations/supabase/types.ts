@@ -334,33 +334,131 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          reference_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          reference_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          reference_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          admin_notes: string | null
+          admin_released: boolean
+          amount: number
+          buyer_confirmed: boolean
+          buyer_id: string
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          listing_id: string
+          platform_fee: number
+          released_at: string | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          admin_released?: boolean
+          amount: number
+          buyer_confirmed?: boolean
+          buyer_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          platform_fee?: number
+          released_at?: string | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          admin_released?: boolean
+          amount?: number
+          buyer_confirmed?: boolean
+          buyer_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          platform_fee?: number
+          released_at?: string | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          is_banned: boolean
           is_verified: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_banned?: boolean
           is_verified?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_banned?: boolean
           is_verified?: boolean
           updated_at?: string
           user_id?: string
@@ -535,6 +633,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_notification: {
+        Args: {
+          _message: string
+          _reference_id?: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       get_seller_rating: {
         Args: { _seller_id: string }
         Returns: {
