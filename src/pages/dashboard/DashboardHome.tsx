@@ -214,11 +214,45 @@ function BuyerDashboard() {
 }
 
 function AdminDashboard() {
-  const stats = [
-    { label: "Total Users", value: "—", icon: Users, color: "text-blue-400" },
-    { label: "Active Listings", value: "—", icon: Package, color: "text-primary" },
-    { label: "Total Sales", value: "—", icon: DollarSign, color: "text-emerald-400" },
-    { label: "Reports", value: "—", icon: Shield, color: "text-destructive" },
+  const navigate = useNavigate();
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["admin-home-stats"],
+    queryFn: async () => {
+      const [profiles, listings, transactions, disputes, flagged] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact" }),
+        supabase.from("listings").select("id, status, price", { count: "exact" }),
+        supabase.from("wallet_transactions").select("id, status, amount").eq("status", "pending"),
+        supabase.from("disputes").select("id, status").in("status", ["open", "investigating"]),
+        supabase.from("flagged_listings").select("id").eq("status", "pending"),
+      ]);
+      const activeListings = listings.data?.filter((l) => l.status === "active").length ?? 0;
+      const totalValue = listings.data?.reduce((s, l) => s + Number(l.price), 0) ?? 0;
+      return {
+        totalUsers: profiles.count ?? 0,
+        activeListings,
+        totalValue,
+        pendingDeposits: transactions.data?.length ?? 0,
+        openDisputes: disputes.data?.length ?? 0,
+        pendingFlags: flagged.data?.length ?? 0,
+      };
+    },
+  });
+
+  const cards = [
+    { label: "Total Users", value: stats?.totalUsers ?? 0, icon: Users, color: "text-blue-400" },
+    { label: "Active Listings", value: stats?.activeListings ?? 0, icon: Package, color: "text-primary" },
+    { label: "Listing Value", value: `₹${(stats?.totalValue ?? 0).toFixed(0)}`, icon: DollarSign, color: "text-emerald-400" },
+    { label: "Pending Deposits", value: stats?.pendingDeposits ?? 0, icon: Wallet, color: "text-amber-400" },
+    { label: "Open Disputes", value: stats?.openDisputes ?? 0, icon: Shield, color: "text-destructive" },
+    { label: "Pending Flags", value: stats?.pendingFlags ?? 0, icon: Flag, color: "text-orange-400" },
+  ];
+
+  const quickLinks = [
+    { label: "Operations", url: "/dashboard/admin/transactions", icon: DollarSign },
+    { label: "All Listings", url: "/dashboard/admin/listings", icon: Package },
+    { label: "Users", url: "/dashboard/admin/users", icon: Users },
+    { label: "Analytics", url: "/dashboard/admin/analytics", icon: BarChart3 },
   ];
 
   return (
@@ -228,23 +262,46 @@ function AdminDashboard() {
         <p className="text-muted-foreground mt-1 text-sm">Marketplace overview and management</p>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <motion.div key={stat.label} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {cards.map((card, i) => (
+          <motion.div key={card.label} variants={fadeUp} initial="hidden" animate="visible" custom={i + 1}>
             <Card className="glass glass-border hover:border-primary/20 transition-colors group">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                    <p className="text-2xl font-display font-bold mt-1">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{card.label}</p>
+                    <p className="text-2xl font-display font-bold mt-1">{isLoading ? "—" : card.value}</p>
                   </div>
-                  <stat.icon className={`h-8 w-8 ${stat.color} opacity-50 group-hover:opacity-80 transition-opacity`} />
+                  <card.icon className={`h-8 w-8 ${card.color} opacity-50 group-hover:opacity-80 transition-opacity`} />
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
+
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={7}>
+        <Card className="glass glass-border">
+          <CardHeader>
+            <CardTitle className="font-display">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {quickLinks.map((link) => (
+                <Button
+                  key={link.label}
+                  variant="outline"
+                  className="font-display h-auto py-4 flex-col gap-2 hover:border-primary/40"
+                  onClick={() => navigate(link.url)}
+                >
+                  <link.icon className="h-5 w-5 text-primary" />
+                  {link.label}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
