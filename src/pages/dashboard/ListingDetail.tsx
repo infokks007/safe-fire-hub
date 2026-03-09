@@ -437,22 +437,39 @@ export default function ListingDetail() {
             )}
 
             {/* CTA */}
-            {!isSeller && user && (
+            {!isSeller && user && listing.status === "active" && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
+                className="space-y-2"
               >
                 <Button
-                  onClick={() => startChatMutation.mutate()}
-                  disabled={startChatMutation.isPending}
+                  onClick={() => setShowBuyDialog(true)}
                   className="w-full font-display glow-flame gap-2 h-13 text-base rounded-xl group"
                   size="lg"
                 >
-                  <MessageSquare className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                  {startChatMutation.isPending ? "Opening chat..." : "Chat Now"}
+                  <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  Buy Now - ₹{Number(listing.price).toFixed(2)}
+                </Button>
+                <Button
+                  onClick={() => startChatMutation.mutate()}
+                  disabled={startChatMutation.isPending}
+                  variant="outline"
+                  className="w-full font-display gap-2 h-11 rounded-xl"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {startChatMutation.isPending ? "Opening chat..." : "Chat with Seller"}
                 </Button>
               </motion.div>
+            )}
+
+            {!isSeller && listing.status !== "active" && (
+              <div className="rounded-2xl glass glass-border p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {listing.status === "sold" ? "This account has been sold" : "This listing is no longer available"}
+                </p>
+              </div>
             )}
 
             {isSeller && (
