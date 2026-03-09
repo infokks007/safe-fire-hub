@@ -101,7 +101,10 @@ export default function BrowseListings() {
       >
         <h1 className="text-3xl font-display font-bold">Browse Accounts</h1>
         <div className="flex items-center gap-3">
-          <ListingFilters filters={filters} onChange={setFilters} activeCount={filtered.length} />
+          {/* Mobile only filter trigger */}
+          <div className="lg:hidden">
+            <ListingFilters filters={filters} onChange={setFilters} activeCount={filtered.length} />
+          </div>
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
