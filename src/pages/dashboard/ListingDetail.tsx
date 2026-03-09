@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +10,27 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Flame, MessageSquare, User, Shield, ChevronLeft, ChevronRight,
-  Play, Image as ImageIcon, Eye, Tag, X
+  Play, Image as ImageIcon, Eye, Tag, X, ShoppingBag, Wallet
 } from "lucide-react";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewsList from "@/components/ReviewsList";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedImage, setSelectedImage] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showBuyDialog, setShowBuyDialog] = useState(false);
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
@@ -42,6 +52,20 @@ export default function ListingDetail() {
     enabled: !!listing?.seller_id,
   });
 
+  const { data: wallet } = useQuery({
+    queryKey: ["my-wallet", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      if (error) return { balance: 0, escrow_balance: 0 };
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const startChatMutation = useMutation({
     mutationFn: async () => {
       if (!user || !listing) throw new Error("Not authenticated");
@@ -57,6 +81,86 @@ export default function ListingDetail() {
       return data.id;
     },
     onSuccess: (conversationId) => navigate(`/dashboard/chat/${conversationId}`),
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Buy now with escrow
+  const buyNowMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !listing || !wallet) throw new Error("Not authenticated");
+      
+      const price = Number(listing.price);
+      const balance = Number(wallet.balance);
+      
+      if (balance < price) {
+        throw new Error(`Insufficient balance. You need ₹${(price - balance).toFixed(2)} more.`);
+      }
+
+      // Deduct from buyer wallet and add to escrow
+      const { error: walletErr } = await supabase
+        .from("wallets")
+        .update({
+          balance: balance - price,
+          escrow_balance: Number(wallet.escrow_balance) + price,
+        } as any)
+        .eq("user_id", user.id);
+      if (walletErr) throw walletErr;
+
+      // Create order
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          listing_id: listing.id,
+          buyer_id: user.id,
+          seller_id: listing.seller_id,
+          amount: price,
+          platform_fee: 0,
+          status: "escrow",
+        } as any)
+        .select()
+        .single();
+      if (orderErr) throw orderErr;
+
+      // Update listing status
+      await supabase
+        .from("listings")
+        .update({ status: "pending" } as any)
+        .eq("id", listing.id);
+
+      // Notify seller
+      await supabase.rpc("create_notification", {
+        _user_id: listing.seller_id,
+        _type: "order_update",
+        _title: "New Order! 🎉",
+        _message: `Someone purchased "${listing.title}" for ₹${price.toFixed(2)}. Please deliver the account.`,
+        _reference_id: order.id,
+      });
+
+      // Create conversation if not exists
+      const { data: convo } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", user.id)
+        .single();
+      
+      if (!convo) {
+        await supabase.from("conversations").insert({
+          listing_id: listing.id,
+          buyer_id: user.id,
+          seller_id: listing.seller_id,
+        });
+      }
+
+      return order;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["listing"] });
+      setShowBuyDialog(false);
+      toast.success("Purchase successful! Funds are held in escrow. Chat with seller to receive your account.");
+      navigate("/dashboard/orders");
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
