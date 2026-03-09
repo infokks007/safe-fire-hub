@@ -49,6 +49,110 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          admin_notes: string | null
+          conversation_id: string
+          created_at: string
+          description: string | null
+          evidence_urls: string[] | null
+          id: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          resolution: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          conversation_id: string
+          created_at?: string
+          description?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          conversation_id?: string
+          created_at?: string
+          description?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          listing_id?: string
+          reason?: string
+          reporter_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      featured_requests: {
+        Row: {
+          created_at: string
+          duration: string
+          expires_at: string | null
+          fee: number
+          id: string
+          listing_id: string
+          seller_id: string
+          starts_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration?: string
+          expires_at?: string | null
+          fee: number
+          id?: string
+          listing_id: string
+          seller_id: string
+          starts_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          duration?: string
+          expires_at?: string | null
+          fee?: number
+          id?: string
+          listing_id?: string
+          seller_id?: string
+          starts_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flagged_listings: {
         Row: {
           admin_notes: string | null
@@ -191,6 +295,45 @@ export type Database = {
           },
         ]
       }
+      news_articles: {
+        Row: {
+          author_id: string | null
+          category: string
+          content: string
+          cover_image: string | null
+          created_at: string
+          id: string
+          published: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          content: string
+          cover_image?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -317,6 +460,72 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          reference_id: string | null
+          resolved_at: string | null
+          status: string
+          type: string
+          upi_transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          reference_id?: string | null
+          resolved_at?: string | null
+          status?: string
+          type: string
+          upi_transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          reference_id?: string | null
+          resolved_at?: string | null
+          status?: string
+          type?: string
+          upi_transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          escrow_balance: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          escrow_balance?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          escrow_balance?: number
+          id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

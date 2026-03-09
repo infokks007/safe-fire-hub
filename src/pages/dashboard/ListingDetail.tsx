@@ -12,6 +12,8 @@ import {
   ArrowLeft, Flame, MessageSquare, User, Shield, ChevronLeft, ChevronRight,
   Play, Image as ImageIcon, Eye, Tag, X
 } from "lucide-react";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewsList from "@/components/ReviewsList";
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -354,6 +356,18 @@ export default function ListingDetail() {
                 <p className="text-sm text-muted-foreground">This is your listing</p>
               </div>
             )}
+
+            {/* Reviews Section */}
+            <div className="space-y-4">
+              <h3 className="font-display font-semibold">Reviews</h3>
+              <ReviewsList sellerId={listing.seller_id} listingId={listing.id} />
+              {user && user.id !== listing.seller_id && (
+                <ReviewForm
+                  listingId={listing.id}
+                  sellerId={listing.seller_id}
+                />
+              )}
+            </div>
           </motion.div>
         </div>
       </motion.div>

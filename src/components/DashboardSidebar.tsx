@@ -12,6 +12,10 @@ import {
   BarChart3,
   LogOut,
   MessageSquare,
+  Wallet,
+  ShieldAlert,
+  Newspaper,
+  DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,12 +42,17 @@ const sellerNav = [
   { title: "Create Listing", url: "/dashboard/listings/new", icon: Plus },
   { title: "Browse", url: "/dashboard/browse", icon: Search },
   { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
+  { title: "Wallet", url: "/dashboard/wallet", icon: Wallet },
+  { title: "News", url: "/dashboard/news", icon: Newspaper },
 ];
 
 const buyerNav = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Browse", url: "/dashboard/browse", icon: Search },
   { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
+  { title: "Wallet", url: "/dashboard/wallet", icon: Wallet },
+  { title: "Disputes", url: "/dashboard/disputes", icon: ShieldAlert },
+  { title: "News", url: "/dashboard/news", icon: Newspaper },
 ];
 
 const adminNav = [
@@ -51,8 +60,10 @@ const adminNav = [
   { title: "All Listings", url: "/dashboard/admin/listings", icon: Package },
   { title: "Users", url: "/dashboard/admin/users", icon: Users },
   { title: "Analytics", url: "/dashboard/admin/analytics", icon: BarChart3 },
+  { title: "Operations", url: "/dashboard/admin/transactions", icon: DollarSign },
   { title: "Browse", url: "/dashboard/browse", icon: Search },
   { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
+  { title: "News", url: "/dashboard/news", icon: Newspaper },
 ];
 
 export function DashboardSidebar() {
