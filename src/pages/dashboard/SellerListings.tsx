@@ -89,7 +89,7 @@ export default function SellerListings() {
                     >
                       {listing.status}
                     </Badge>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/dashboard/listing/${listing.id}`)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button

@@ -84,57 +84,16 @@ export default function ListingDetail() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Buy now with escrow
+  // Buy now with escrow (atomic server-side function)
   const buyNowMutation = useMutation({
     mutationFn: async () => {
-      if (!user || !listing || !wallet) throw new Error("Not authenticated");
-      
-      const price = Number(listing.price);
-      const balance = Number(wallet.balance);
-      
-      if (balance < price) {
-        throw new Error(`Insufficient balance. You need ₹${(price - balance).toFixed(2)} more.`);
-      }
+      if (!user || !listing) throw new Error("Not authenticated");
 
-      // Deduct from buyer wallet and add to escrow
-      const { error: walletErr } = await supabase
-        .from("wallets")
-        .update({
-          balance: balance - price,
-          escrow_balance: Number(wallet.escrow_balance) + price,
-        } as any)
-        .eq("user_id", user.id);
-      if (walletErr) throw walletErr;
-
-      // Create order
-      const { data: order, error: orderErr } = await supabase
-        .from("orders")
-        .insert({
-          listing_id: listing.id,
-          buyer_id: user.id,
-          seller_id: listing.seller_id,
-          amount: price,
-          platform_fee: 0,
-          status: "escrow",
-        } as any)
-        .select()
-        .single();
-      if (orderErr) throw orderErr;
-
-      // Update listing status
-      await supabase
-        .from("listings")
-        .update({ status: "pending" } as any)
-        .eq("id", listing.id);
-
-      // Notify seller
-      await supabase.rpc("create_notification", {
-        _user_id: listing.seller_id,
-        _type: "order_update",
-        _title: "New Order! 🎉",
-        _message: `Someone purchased "${listing.title}" for ₹${price.toFixed(2)}. Please deliver the account.`,
-        _reference_id: order.id,
+      const { data: orderId, error } = await supabase.rpc("purchase_listing", {
+        _buyer_id: user.id,
+        _listing_id: listing.id,
       });
+      if (error) throw new Error(error.message);
 
       // Create conversation if not exists
       const { data: convo } = await supabase
@@ -143,7 +102,7 @@ export default function ListingDetail() {
         .eq("listing_id", listing.id)
         .eq("buyer_id", user.id)
         .single();
-      
+
       if (!convo) {
         await supabase.from("conversations").insert({
           listing_id: listing.id,
@@ -152,7 +111,7 @@ export default function ListingDetail() {
         });
       }
 
-      return order;
+      return orderId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-wallet"] });
