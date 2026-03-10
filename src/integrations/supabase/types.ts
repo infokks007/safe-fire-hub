@@ -679,6 +679,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      purchase_listing: {
+        Args: { _buyer_id: string; _listing_id: string }
+        Returns: string
+      }
       request_withdrawal: {
         Args: { _amount: number; _upi_id: string; _user_id: string }
         Returns: undefined
