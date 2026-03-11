@@ -13,7 +13,10 @@ export default function DashboardLayout() {
         <div className="flex-1 flex flex-col">
           <header className="h-14 flex items-center justify-between border-b border-border/30 glass sticky top-0 z-40 px-4">
             <SidebarTrigger className="hover:text-primary transition-colors" />
-            <NotificationsDropdown />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <NotificationsDropdown />
+            </div>
           </header>
           <motion.main
             initial={{ opacity: 0 }}
