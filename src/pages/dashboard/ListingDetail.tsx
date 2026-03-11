@@ -31,6 +31,12 @@ export default function ListingDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showBuyDialog, setShowBuyDialog] = useState(false);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [editPrice, setEditPrice] = useState("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
