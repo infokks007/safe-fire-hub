@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Flame, ArrowRight, Shield, Zap, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
