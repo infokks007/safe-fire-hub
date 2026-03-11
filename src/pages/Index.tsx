@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Flame, ArrowRight, Shield, Zap, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -40,6 +41,10 @@ export default function Index() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      {/* Theme toggle */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       {/* Ambient background */}
       <div className="absolute inset-0 bg-grid opacity-40" />
       <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,hsl(22_100%_52%/0.1),transparent_60%)] blur-3xl" />
