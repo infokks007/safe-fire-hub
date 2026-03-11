@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Flame, MessageSquare, User, Shield, ChevronLeft, ChevronRight,
-  Play, Image as ImageIcon, Eye, Tag, X, ShoppingBag, Wallet
+  Play, Image as ImageIcon, Eye, Tag, X, ShoppingBag, Wallet, Pencil, Check
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewsList from "@/components/ReviewsList";
 import {
@@ -31,6 +33,12 @@ export default function ListingDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showBuyDialog, setShowBuyDialog] = useState(false);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [editPrice, setEditPrice] = useState("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
@@ -119,6 +127,26 @@ export default function ListingDetail() {
       setShowBuyDialog(false);
       toast.success("Purchase successful! Funds are held in escrow. Chat with seller to receive your account.");
       navigate("/dashboard/orders");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Update listing mutation (for sellers)
+  const updateListingMutation = useMutation({
+    mutationFn: async (updates: { price?: number; title?: string; description?: string }) => {
+      if (!listing) throw new Error("No listing");
+      const { error } = await supabase
+        .from("listings")
+        .update(updates)
+        .eq("id", listing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["listing", id] });
+      setIsEditingPrice(false);
+      setIsEditingTitle(false);
+      setIsEditingDescription(false);
+      toast.success("Listing updated!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -295,22 +323,63 @@ export default function ListingDetail() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <Badge variant="secondary" className="font-display capitalize mb-2 rounded-md">{listing.status}</Badge>
-                  <h1 className="font-display font-bold text-2xl leading-tight">{listing.title}</h1>
+                  {isSeller && isEditingTitle ? (
+                    <div className="flex items-center gap-2">
+                      <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="font-display font-bold text-xl" />
+                      <Button size="icon" variant="ghost" onClick={() => { if (editTitle.trim()) updateListingMutation.mutate({ title: editTitle.trim() }); }}><Check className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setIsEditingTitle(false)}><X className="h-4 w-4" /></Button>
+                    </div>
+                  ) : (
+                    <h1 className="font-display font-bold text-2xl leading-tight group/title">
+                      {listing.title}
+                      {isSeller && <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 opacity-0 group-hover/title:opacity-100 transition-opacity" onClick={() => { setEditTitle(listing.title); setIsEditingTitle(true); }}><Pencil className="h-3 w-3" /></Button>}
+                    </h1>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Price</p>
-                  <p className="font-display font-bold text-3xl text-gradient-flame">
-                    ${Number(listing.price).toFixed(2)}
-                  </p>
+                  {isSeller && isEditingPrice ? (
+                    <div className="flex items-center gap-2">
+                      <Input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="w-28 font-display font-bold text-xl text-right" min="0" step="0.01" />
+                      <Button size="icon" variant="ghost" onClick={() => { const p = parseFloat(editPrice); if (p > 0) updateListingMutation.mutate({ price: p }); }}><Check className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setIsEditingPrice(false)}><X className="h-4 w-4" /></Button>
+                    </div>
+                  ) : (
+                    <p className="font-display font-bold text-3xl text-gradient-flame group/price cursor-default">
+                      ₹{Number(listing.price).toFixed(2)}
+                      {isSeller && <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 opacity-0 group-hover/price:opacity-100 transition-opacity" onClick={() => { setEditPrice(String(listing.price)); setIsEditingPrice(true); }}><Pencil className="h-3 w-3" /></Button>}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {listing.description && (
+              {isSeller && isEditingDescription ? (
                 <>
                   <Separator className="bg-border/30" />
-                  <p className="text-sm text-muted-foreground leading-relaxed">{listing.description}</p>
+                  <div className="space-y-2">
+                    <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => updateListingMutation.mutate({ description: editDescription.trim() || undefined })}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setIsEditingDescription(false)}>Cancel</Button>
+                    </div>
+                  </div>
                 </>
-              )}
+              ) : listing.description ? (
+                <>
+                  <Separator className="bg-border/30" />
+                  <p className="text-sm text-muted-foreground leading-relaxed group/desc">
+                    {listing.description}
+                    {isSeller && <Button variant="ghost" size="icon" className="h-5 w-5 ml-1 opacity-0 group-hover/desc:opacity-100 transition-opacity inline-flex" onClick={() => { setEditDescription(listing.description || ""); setIsEditingDescription(true); }}><Pencil className="h-3 w-3" /></Button>}
+                  </p>
+                </>
+              ) : isSeller ? (
+                <>
+                  <Separator className="bg-border/30" />
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { setEditDescription(""); setIsEditingDescription(true); }}>
+                    <Pencil className="h-3 w-3 mr-1" /> Add description
+                  </Button>
+                </>
+              ) : null}
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {listing.freefire_uid && (
