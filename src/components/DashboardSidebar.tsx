@@ -52,6 +52,7 @@ const sellerNav = [
 const buyerNav = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Browse", url: "/dashboard/browse", icon: Search },
+  { title: "Auctions", url: "/dashboard/auctions", icon: Gavel },
   { title: "Orders", url: "/dashboard/orders", icon: ShoppingBag },
   { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
   { title: "Wallet", url: "/dashboard/wallet", icon: Wallet },
