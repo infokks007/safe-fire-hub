@@ -131,6 +131,26 @@ export default function ListingDetail() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Update listing mutation (for sellers)
+  const updateListingMutation = useMutation({
+    mutationFn: async (updates: { price?: number; title?: string; description?: string }) => {
+      if (!listing) throw new Error("No listing");
+      const { error } = await supabase
+        .from("listings")
+        .update(updates)
+        .eq("id", listing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["listing", id] });
+      setIsEditingPrice(false);
+      setIsEditingTitle(false);
+      setIsEditingDescription(false);
+      toast.success("Listing updated!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
