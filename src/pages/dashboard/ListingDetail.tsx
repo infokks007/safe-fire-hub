@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Flame, MessageSquare, User, Shield, ChevronLeft, ChevronRight,
-  Play, Image as ImageIcon, Eye, Tag, X, ShoppingBag, Wallet
+  Play, Image as ImageIcon, Eye, Tag, X, ShoppingBag, Wallet, Pencil, Check
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewsList from "@/components/ReviewsList";
 import {
