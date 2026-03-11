@@ -42,6 +42,7 @@ const sellerNav = [
   { title: "My Listings", url: "/dashboard/listings", icon: Package },
   { title: "Create Listing", url: "/dashboard/listings/new", icon: Plus },
   { title: "Browse", url: "/dashboard/browse", icon: Search },
+  { title: "Auctions", url: "/dashboard/auctions", icon: Gavel },
   { title: "Orders", url: "/dashboard/orders", icon: ShoppingBag },
   { title: "Messages", url: "/dashboard/chat", icon: MessageSquare },
   { title: "Wallet", url: "/dashboard/wallet", icon: Wallet },
