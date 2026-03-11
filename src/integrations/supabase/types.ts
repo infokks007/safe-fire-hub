@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      auction_bids: {
+        Row: {
+          amount: number
+          auction_id: string
+          bidder_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          amount: number
+          auction_id: string
+          bidder_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          amount?: number
+          auction_id?: string
+          bidder_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auctions: {
+        Row: {
+          bundles: string[] | null
+          characters: string[] | null
+          created_at: string
+          current_price: number
+          description: string | null
+          duration_minutes: number
+          elite_pass: boolean | null
+          ends_at: string
+          evo_guns: string[] | null
+          freefire_uid: string | null
+          gun_skins: string[] | null
+          highest_bidder_id: string | null
+          id: string
+          images: string[] | null
+          level: number | null
+          rank: string | null
+          region: string | null
+          seller_id: string
+          starting_price: number
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bundles?: string[] | null
+          characters?: string[] | null
+          created_at?: string
+          current_price: number
+          description?: string | null
+          duration_minutes?: number
+          elite_pass?: boolean | null
+          ends_at: string
+          evo_guns?: string[] | null
+          freefire_uid?: string | null
+          gun_skins?: string[] | null
+          highest_bidder_id?: string | null
+          id?: string
+          images?: string[] | null
+          level?: number | null
+          rank?: string | null
+          region?: string | null
+          seller_id: string
+          starting_price: number
+          starts_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bundles?: string[] | null
+          characters?: string[] | null
+          created_at?: string
+          current_price?: number
+          description?: string | null
+          duration_minutes?: number
+          elite_pass?: boolean | null
+          ends_at?: string
+          evo_guns?: string[] | null
+          freefire_uid?: string | null
+          gun_skins?: string[] | null
+          highest_bidder_id?: string | null
+          id?: string
+          images?: string[] | null
+          level?: number | null
+          rank?: string | null
+          region?: string | null
+          seller_id?: string
+          starting_price?: number
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -670,6 +780,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      place_bid: {
+        Args: { _amount: number; _auction_id: string; _bidder_id: string }
+        Returns: undefined
       }
       process_withdrawal: {
         Args: {

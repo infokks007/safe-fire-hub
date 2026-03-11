@@ -27,6 +27,9 @@ import WalletPage from "./pages/dashboard/WalletPage";
 import DisputesPage from "./pages/dashboard/DisputesPage";
 import NewsPage from "./pages/dashboard/NewsPage";
 import OrdersPage from "./pages/dashboard/OrdersPage";
+import BrowseAuctions from "./pages/dashboard/BrowseAuctions";
+import CreateAuction from "./pages/dashboard/CreateAuction";
+import AuctionDetail from "./pages/dashboard/AuctionDetail";
 import { Flame } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -80,6 +83,9 @@ const App = () => (
               <Route path="disputes" element={<DisputesPage />} />
               <Route path="news" element={<NewsPage />} />
               <Route path="orders" element={<OrdersPage />} />
+              <Route path="auctions" element={<BrowseAuctions />} />
+              <Route path="auctions/new" element={<CreateAuction />} />
+              <Route path="auction/:id" element={<AuctionDetail />} />
               <Route path="admin/users" element={<AdminUsers />} />
               <Route path="admin/listings" element={<AdminListings />} />
               <Route path="admin/analytics" element={<AdminAnalytics />} />
