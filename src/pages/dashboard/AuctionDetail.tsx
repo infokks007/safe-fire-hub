@@ -85,6 +85,22 @@ export default function AuctionDetail() {
   const [bidding, setBidding] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [finalizing, setFinalizing] = useState(false);
+
+  const finalizeAuction = useCallback(async () => {
+    if (!id || finalizing) return;
+    setFinalizing(true);
+    try {
+      const { error } = await supabase.rpc("finalize_auction", { _auction_id: id });
+      if (error && !error.message.includes("not active")) {
+        console.error("Finalize error:", error.message);
+      }
+    } catch (err) {
+      console.error("Finalize failed:", err);
+    } finally {
+      setFinalizing(false);
+    }
+  }, [id, finalizing]);
 
   const fetchAuction = useCallback(async () => {
     if (!id) return;
@@ -241,7 +257,10 @@ export default function AuctionDetail() {
                   {isExpired ? "Ended" : "Live"}
                 </Badge>
               </div>
-              <CountdownTimer endsAt={auction.ends_at} onExpired={() => setIsExpired(true)} />
+              <CountdownTimer endsAt={auction.ends_at} onExpired={() => {
+                setIsExpired(true);
+                finalizeAuction();
+              }} />
             </CardHeader>
             <CardContent className="space-y-4">
               {auction.description && <p className="text-sm text-muted-foreground">{auction.description}</p>}

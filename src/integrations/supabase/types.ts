@@ -762,6 +762,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      finalize_auction: { Args: { _auction_id: string }; Returns: string }
       get_seller_rating: {
         Args: { _seller_id: string }
         Returns: {
