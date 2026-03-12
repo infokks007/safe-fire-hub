@@ -257,7 +257,10 @@ export default function AuctionDetail() {
                   {isExpired ? "Ended" : "Live"}
                 </Badge>
               </div>
-              <CountdownTimer endsAt={auction.ends_at} onExpired={() => setIsExpired(true)} />
+              <CountdownTimer endsAt={auction.ends_at} onExpired={() => {
+                setIsExpired(true);
+                finalizeAuction();
+              }} />
             </CardHeader>
             <CardContent className="space-y-4">
               {auction.description && <p className="text-sm text-muted-foreground">{auction.description}</p>}
